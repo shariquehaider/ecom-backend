@@ -1,0 +1,90 @@
+package controllers
+
+import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/shariquehaider/ecom-backend/models"
+	"github.com/shariquehaider/ecom-backend/utils"
+	"golang.org/x/crypto/bcrypt"
+)
+
+type Login struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+func LoginController(ctx *gin.Context) {
+	var loginCredentials Login
+
+	if err := ctx.ShouldBindJSON(&loginCredentials); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
+
+	user, err := models.FindUserByUsername(loginCredentials.Email)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
+		return
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginCredentials.Password))
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
+		return
+	}
+
+	token, err := utils.GenerateJWT(user.Email)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate token"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"token": token})
+}
+
+func RegisterController(ctx *gin.Context) {
+	var registerCreds models.User
+
+	if err := ctx.ShouldBindJSON(&registerCreds); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
+
+	user, _ := models.FindUserByUsername(registerCreds.Email)
+	if user != nil {
+		ctx.JSON(http.StatusConflict, gin.H{
+			"error": "User Already Exist!",
+		})
+		return
+	}
+	hashedPassword, err := utils.HashPassword(registerCreds.Password)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Error creating user"})
+		return
+	}
+
+	newUser := models.User{
+		Email:    registerCreds.Email,
+		Password: hashedPassword,
+		Name:     registerCreds.Name,
+	}
+
+	err = models.CreateUser(newUser)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+		return
+	}
+	ctx.JSON(http.StatusCreated, gin.H{"message": "User registered successfully"})
+}
+
+func GetProfileController(ctx *gin.Context) {
+	userID := ctx.MustGet("_id").(string)
+	user, err := models.FindById(userID)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid Token"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"user": user})
+}
