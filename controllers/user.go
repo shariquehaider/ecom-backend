@@ -6,11 +6,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/shariquehaider/ecom-backend/models"
 	"github.com/shariquehaider/ecom-backend/utils"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type Login struct {
-	Email    string `json:"email"`
+	Username string `json:"username"`
 	Password string `json:"password"`
 }
 
@@ -22,17 +21,21 @@ func LoginController(ctx *gin.Context) {
 		return
 	}
 
-	user, err := models.FindUserByUsername(loginCredentials.Email)
+	user, err := models.FindUserByUsername(loginCredentials.Username)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
 		return
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginCredentials.Password))
-	if err != nil {
+	isVerified := utils.CompareHashPassword(loginCredentials.Password, user.Password)
+	if !isVerified {
 		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
 		return
 	}
+	// if user.Password != loginCredentials.Password {
+	// 	ctx.JSON(http.StatusBadRequest, gin.H{"error": "Incorrect Email or Password"})
+	// 	return
+	// }
 
 	token, err := utils.GenerateJWT(user.Email)
 	if err != nil {
@@ -58,14 +61,15 @@ func RegisterController(ctx *gin.Context) {
 		})
 		return
 	}
-	hashedPassword, err := utils.HashPassword(registerCreds.Password)
+
+	hashedPassword, err := utils.GenerateHashPassword(registerCreds.Password)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Error creating user"})
-		return
+		panic(err)
 	}
 
 	newUser := models.User{
 		Email:    registerCreds.Email,
+		Username: registerCreds.Username,
 		Password: hashedPassword,
 		Name:     registerCreds.Name,
 	}
@@ -75,7 +79,7 @@ func RegisterController(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
 		return
 	}
-	ctx.JSON(http.StatusCreated, gin.H{"message": "User registered successfully"})
+	ctx.JSON(http.StatusCreated, gin.H{"message": "User registered successfully. Login to Continue."})
 }
 
 func GetProfileController(ctx *gin.Context) {

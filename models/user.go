@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/shariquehaider/ecom-backend/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -15,7 +16,7 @@ type User struct {
 	Id       primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
 	Picture  string             `json:"picture"`
 	Email    string             `json:"email,omitempty"`
-	Password string             `json:"-"`
+	Password string             `json:"password"`
 	Name     string             `json:"name,omitempty"`
 	Username string             `json:"username,omitempty"`
 }
@@ -55,11 +56,21 @@ func FindById(id string) (*User, error) {
 	return &user, nil
 }
 
-func FindUserByUsername(email string) (*User, error) {
+func FindUserByUsername(key string) (*User, error) {
 	var user User
-	err := collection.FindOne(context.TODO(), bson.M{"email": email}).Decode(&user)
-	if err != nil {
-		return nil, err
+
+	isEmail := utils.IsValidEmail(key)
+	if isEmail {
+		err := collection.FindOne(context.TODO(), bson.M{"email": key}).Decode(&user)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		err := collection.FindOne(context.TODO(), bson.M{"username": key}).Decode(&user)
+		if err != nil {
+			return nil, err
+		}
 	}
+
 	return &user, nil
 }
