@@ -6,6 +6,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/shariquehaider/ecom-backend/controllers"
+	"github.com/shariquehaider/ecom-backend/middleware"
 )
 
 func SetupRouter() *gin.Engine {
@@ -22,5 +23,6 @@ func SetupRouter() *gin.Engine {
 
 	router.POST("/api/register", controllers.RegisterController)
 	router.POST("/api/login", controllers.LoginController)
+	router.GET("/api/account", middleware.VerifyTokenMiddleware(), controllers.GetProfileController)
 	return router
 }
