@@ -14,7 +14,7 @@ func SetupRouter() *gin.Engine {
 
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "PATCH"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
@@ -24,5 +24,6 @@ func SetupRouter() *gin.Engine {
 	router.POST("/api/register", controllers.RegisterController)
 	router.POST("/api/login", controllers.LoginController)
 	router.GET("/api/account", middleware.VerifyTokenMiddleware(), controllers.GetProfileController)
+	router.PATCH("/api/account/password", middleware.VerifyTokenMiddleware(), controllers.ChangePasswordController)
 	return router
 }

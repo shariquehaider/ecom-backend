@@ -8,3 +8,7 @@ func IsValidEmail(email string) bool {
 	re := regexp.MustCompile(regex)
 	return re.MatchString(email)
 }
+
+func VerifyNewPassword(password, confirmPassword string) bool {
+	return password == confirmPassword
+}

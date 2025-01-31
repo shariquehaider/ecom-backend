@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -11,6 +12,12 @@ import (
 type Login struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
+}
+
+type updatePasswordRequest struct {
+	Password           string `json:"currentPassword"`
+	NewPassword        string `json:"newPassword"`
+	ConfirmNewPassword string `json:"confirmNewPassword"`
 }
 
 func LoginController(ctx *gin.Context) {
@@ -87,4 +94,31 @@ func GetProfileController(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"user": user})
+}
+
+func ChangePasswordController(ctx *gin.Context) {
+	userID := ctx.MustGet("_id").(string)
+	var newPassword updatePasswordRequest
+
+	if err := ctx.ShouldBindJSON(&newPassword); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
+
+	fmt.Println(newPassword)
+
+	isMatched := utils.VerifyNewPassword(newPassword.NewPassword, newPassword.ConfirmNewPassword)
+	if !isMatched {
+		ctx.JSON(http.StatusBadGateway, gin.H{"error": "New Password MisMatched"})
+		return
+	}
+
+	_, err := models.ChangePasswordByID(userID, newPassword.Password, newPassword.NewPassword)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": err})
+		return
+	}
+
+	ctx.JSON(http.StatusAccepted, gin.H{"message": "Password Changed!"})
+
 }

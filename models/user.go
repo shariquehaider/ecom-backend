@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -56,12 +57,10 @@ func FindById(id string) (*User, error) {
 	objID, err := primitive.ObjectIDFromHex(trimmedObjectId)
 
 	if err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
-	fmt.Println("func", objID)
+
 	err = collection.FindOne(context.TODO(), bson.M{"_id": objID}).Decode(&user)
-	fmt.Println(user)
 	if err != nil {
 		return nil, err
 	}
@@ -85,4 +84,37 @@ func FindUserByUsername(key string) (*User, error) {
 	}
 
 	return &user, nil
+}
+
+func ChangePasswordByID(id string, oldPassword, newPassword string) (*mongo.UpdateResult, error) {
+	trimmedObjectId := strings.TrimPrefix(id, "ObjectID(")
+	trimmedObjectId = strings.TrimSuffix(trimmedObjectId, ")")
+	trimmedObjectId = strings.Trim(trimmedObjectId, `"`)
+	objID, err := primitive.ObjectIDFromHex(trimmedObjectId)
+	if err != nil {
+		return nil, err
+	}
+
+	var user User
+
+	err = collection.FindOne(context.TODO(), bson.M{"_id": objID}).Decode(&user)
+	if err != nil {
+		return nil, err
+	}
+
+	isVerified := utils.CompareHashPassword(oldPassword, user.Password)
+	if !isVerified {
+		return nil, errors.New("Invalid Current Password")
+	}
+
+	hashPassword, err := utils.GenerateHashPassword(newPassword)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := collection.UpdateOne(context.TODO(), bson.M{"_id": objID}, bson.M{"$set": bson.M{"password": hashPassword}})
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
