@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/shariquehaider/ecom-backend/utils"
 	"go.mongodb.org/mongo-driver/bson"
@@ -49,7 +50,18 @@ func CreateUser(user User) error {
 
 func FindById(id string) (*User, error) {
 	var user User
-	err := collection.FindOne(context.TODO(), bson.M{"_id": id}).Decode(&user)
+	trimmedObjectId := strings.TrimPrefix(id, "ObjectID(")
+	trimmedObjectId = strings.TrimSuffix(trimmedObjectId, ")")
+	trimmedObjectId = strings.Trim(trimmedObjectId, `"`)
+	objID, err := primitive.ObjectIDFromHex(trimmedObjectId)
+
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	fmt.Println("func", objID)
+	err = collection.FindOne(context.TODO(), bson.M{"_id": objID}).Decode(&user)
+	fmt.Println(user)
 	if err != nil {
 		return nil, err
 	}

@@ -32,12 +32,8 @@ func LoginController(ctx *gin.Context) {
 		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
 		return
 	}
-	// if user.Password != loginCredentials.Password {
-	// 	ctx.JSON(http.StatusBadRequest, gin.H{"error": "Incorrect Email or Password"})
-	// 	return
-	// }
 
-	token, err := utils.GenerateJWT(user.Email)
+	token, err := utils.GenerateJWT(user.Id.String())
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate token"})
 		return

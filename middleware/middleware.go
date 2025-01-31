@@ -1,8 +1,8 @@
 package middleware
 
 import (
-	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
@@ -12,14 +12,13 @@ import (
 func VerifyTokenMiddleware() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		tokenString := ctx.GetHeader("Authorization")
-		fmt.Println(tokenString)
 		if tokenString == "" {
 			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "No token provided"})
 			ctx.Abort()
 			return
 		}
-
-		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		onlyToken := strings.TrimPrefix(tokenString, "Bearer ")
+		token, err := jwt.Parse(onlyToken, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, gin.Error{
 					Type: gin.ErrorTypePublic,
