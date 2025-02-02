@@ -87,10 +87,7 @@ func FindUserByUsername(key string) (*User, error) {
 }
 
 func ChangePasswordByID(id string, oldPassword, newPassword string) (*mongo.UpdateResult, error) {
-	trimmedObjectId := strings.TrimPrefix(id, "ObjectID(")
-	trimmedObjectId = strings.TrimSuffix(trimmedObjectId, ")")
-	trimmedObjectId = strings.Trim(trimmedObjectId, `"`)
-	objID, err := primitive.ObjectIDFromHex(trimmedObjectId)
+	objID, err := utils.VerifyObjectId(id)
 	if err != nil {
 		return nil, err
 	}
@@ -116,5 +113,23 @@ func ChangePasswordByID(id string, oldPassword, newPassword string) (*mongo.Upda
 	if err != nil {
 		return nil, err
 	}
+	return result, nil
+}
+
+func UpdateProfileByID(id string, user User) (*mongo.UpdateResult, error) {
+	objId, err := utils.VerifyObjectId(id)
+	if err != nil {
+		return nil, err
+	}
+
+	update := bson.M{"$set": bson.M{
+		"profile": user.Picture,
+		"name":    user.Name,
+	}}
+	result, err := collection.UpdateOne(context.TODO(), bson.M{"_id": objId}, update)
+	if err != nil {
+		return nil, err
+	}
+
 	return result, nil
 }

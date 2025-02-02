@@ -1,6 +1,11 @@
 package utils
 
-import "regexp"
+import (
+	"regexp"
+	"strings"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 func IsValidEmail(email string) bool {
 	// Regular expression for basic email validation
@@ -11,4 +16,17 @@ func IsValidEmail(email string) bool {
 
 func VerifyNewPassword(password, confirmPassword string) bool {
 	return password == confirmPassword
+}
+
+func VerifyObjectId(id string) (*primitive.ObjectID, error) {
+	trimmedObjectId := strings.TrimPrefix(id, "ObjectID(")
+	trimmedObjectId = strings.TrimSuffix(trimmedObjectId, ")")
+	trimmedObjectId = strings.Trim(trimmedObjectId, `"`)
+
+	objID, err := primitive.ObjectIDFromHex(trimmedObjectId)
+	if err != nil {
+		return nil, err
+	}
+
+	return &objID, nil
 }

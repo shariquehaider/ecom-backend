@@ -105,8 +105,6 @@ func ChangePasswordController(ctx *gin.Context) {
 		return
 	}
 
-	fmt.Println(newPassword)
-
 	isMatched := utils.VerifyNewPassword(newPassword.NewPassword, newPassword.ConfirmNewPassword)
 	if !isMatched {
 		ctx.JSON(http.StatusBadGateway, gin.H{"error": "New Password MisMatched"})
@@ -121,4 +119,22 @@ func ChangePasswordController(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusAccepted, gin.H{"message": "Password Changed!"})
 
+}
+
+func UpdateUserController(ctx *gin.Context) {
+	userID := ctx.MustGet("_id").(string)
+	var registerCreds models.User
+	if err := ctx.ShouldBindJSON(&registerCreds); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
+
+	result, err := models.UpdateProfileByID(userID, registerCreds)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err})
+		return
+	}
+
+	fmt.Println(result.ModifiedCount)
+	ctx.JSON(http.StatusAccepted, gin.H{"message": "Profile Updated"})
 }
