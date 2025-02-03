@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"strings"
 
 	"github.com/shariquehaider/ecom-backend/utils"
 	"go.mongodb.org/mongo-driver/bson"
@@ -15,12 +14,14 @@ import (
 )
 
 type User struct {
-	Id       primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
-	Picture  string             `json:"picture"`
-	Email    string             `json:"email,omitempty"`
-	Password string             `json:"password"`
-	Name     string             `json:"name,omitempty"`
-	Username string             `json:"username,omitempty"`
+	Id              primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
+	Picture         string             `json:"picture"`
+	Email           string             `json:"email,omitempty"`
+	Password        string             `json:"password"`
+	Name            string             `json:"name,omitempty"`
+	Username        string             `json:"username,omitempty"`
+	BillingAddress  Address            `json:"billingAddress`
+	ShippingAddress Address            `json:"shippingAddress"`
 }
 
 const connectionString string = "mongodb+srv://sharique:heysharique123@cluster0.8o2va.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
@@ -51,16 +52,12 @@ func CreateUser(user User) error {
 
 func FindById(id string) (*User, error) {
 	var user User
-	trimmedObjectId := strings.TrimPrefix(id, "ObjectID(")
-	trimmedObjectId = strings.TrimSuffix(trimmedObjectId, ")")
-	trimmedObjectId = strings.Trim(trimmedObjectId, `"`)
-	objID, err := primitive.ObjectIDFromHex(trimmedObjectId)
-
+	objId, err := utils.VerifyObjectId(id)
 	if err != nil {
 		return nil, err
 	}
 
-	err = collection.FindOne(context.TODO(), bson.M{"_id": objID}).Decode(&user)
+	err = collection.FindOne(context.TODO(), bson.M{"_id": objId}).Decode(&user)
 	if err != nil {
 		return nil, err
 	}

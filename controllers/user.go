@@ -138,3 +138,27 @@ func UpdateUserController(ctx *gin.Context) {
 	fmt.Println(result.ModifiedCount)
 	ctx.JSON(http.StatusAccepted, gin.H{"message": "Profile Updated"})
 }
+
+func UpdateAddressController(ctx *gin.Context) {
+	userID := ctx.MustGet("_id").(string)
+	var AddressCtx models.Address
+	if err := ctx.ShouldBindJSON(&AddressCtx); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
+
+	count, err := models.UpdateAddress(userID, &AddressCtx)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+
+	if count != 0 {
+		user, err := models.FindById(userID)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": err})
+			return
+		}
+		ctx.JSON(http.StatusAccepted, gin.H{"response": user})
+	}
+}

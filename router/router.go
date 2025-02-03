@@ -25,5 +25,6 @@ func SetupRouter() *gin.Engine {
 	router.POST("/api/login", controllers.LoginController)
 	router.GET("/api/account", middleware.VerifyTokenMiddleware(), controllers.GetProfileController)
 	router.PATCH("/api/account/password", middleware.VerifyTokenMiddleware(), controllers.ChangePasswordController)
+	router.PATCH("/api/account/address", middleware.VerifyTokenMiddleware(), controllers.UpdateAddressController)
 	return router
 }
